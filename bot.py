@@ -2,7 +2,7 @@ import telebot
 import requests
 from telebot import types
 
-TOKEN = '8876162909:AAGMh1SUrjw0T8PdpojVJ1nkvjoMG6UWQVU'
+TOKEN = ''
 bot = telebot.TeleBot(TOKEN)
 
 def get_random_recipe():
