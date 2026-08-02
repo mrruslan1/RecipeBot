@@ -10,7 +10,6 @@ def get_random_recipe():
     response = requests.get(url).json()
     meal = response['meals'][0]
     
-    # Проверяем наличие ссылки, если её нет — ставим заглушку
     link = meal.get("strSource") or "https://www.themealdb.com"
     
     return {
@@ -26,7 +25,7 @@ def search_recipes(ingredient):
     response = requests.get(url).json()
     
     meals = []
-    # Если ингредиент не найден, API возвращает None
+    
     if response.get('meals') is None:
         return meals
         
@@ -75,16 +74,14 @@ def send_random_recipe(message):
         parse_mode="HTML",
     )
 
-# Обработка текстовых сообщений (включая нажатия на Reply-кнопки)
 @bot.message_handler(content_types=["text"])
 def handle_text(message):
     text_input = message.text.strip()
 
-    # Проверяем нажатие кнопки "Случайный рецепт"
     if text_input == "🎲 Случайный рецепт":
         return send_random_recipe(message)
     
-    # Проверяем нажатие кнопки "Как искать?"
+
     if text_input == "🔍 Как искать?":
         return bot.send_message(
             message.chat.id, 
@@ -92,7 +89,6 @@ def handle_text(message):
             parse_mode="HTML"
         )
 
-    # Обычный текстовый поиск ингредиента
     ingredient = text_input.lower()
     recipes = search_recipes(ingredient)
     if not recipes:
@@ -111,7 +107,6 @@ def handle_text(message):
         reply_markup=markup
     )
 
-# Важно: callback_query_handler должен быть ДО запуска polling
 @bot.callback_query_handler(func=lambda call: True)
 def show_full_recipe(call):
     _, recipe_id = call.data.split('_')
@@ -124,7 +119,7 @@ def show_full_recipe(call):
     for i in range(20):
         ing = meal.get(f'strIngredient{i + 1}')
         meas = meal.get(f'strMeasure{i + 1}')
-        # Защита от пустых строк и None значений из API
+       
         if ing and ing.strip():
             meas_str = f" ({meas.strip()})" if meas and meas.strip() else ""
             ingredients.append(f"- {ing.strip()}{meas_str}")
@@ -138,13 +133,13 @@ def show_full_recipe(call):
     )
 
     try:
-        # Изменяем картинку на картинку выбранного блюда
+    
         bot.edit_message_media(
             media=types.InputMediaPhoto(meal["strMealThumb"]),
             chat_id=call.message.chat.id,
             message_id=call.message.message_id
         )
-        # Изменяем текст и убираем инлайн-кнопки поиска
+        
         bot.edit_message_caption(
             caption=text,
             chat_id=call.message.chat.id,
@@ -153,8 +148,7 @@ def show_full_recipe(call):
         )
     except Exception as e:
         print(f"Ошибка обновления сообщения: {e}")
-        # Если старое сообщение было чисто текстовым, edit_message_media вызовет ошибку. 
-        # На всякий случай отправляем рецепт новым сообщением.
+
         bot.send_photo(
             chat_id=call.message.chat.id,
             photo=meal["strMealThumb"],
@@ -162,10 +156,8 @@ def show_full_recipe(call):
             parse_mode="HTML"
         )
     
-    # Уведомляем Telegram, что кнопка успешно обработана (убирает вечную загрузку на кнопке)
     bot.answer_callback_query(call.id)
 
-# Точка входа внизу файла
 if __name__ == "__main__":
     print("Бот запущен!")
     bot.infinity_polling()
